@@ -2,18 +2,26 @@
 import clientPromise from "../../lib/mongodb";
 
 export default async function handler(req, res) {
+  console.log("📡 Register API Called");
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { user_id, username } = req.body;
-  const numericId = parseInt(user_id); // ✅ التحويل المهم
-
-  if (!numericId || !username) {
-    return res.status(400).json({ error: "Missing user_id or username" });
-  }
-
   try {
+    const { user_id, username } = req.body;
+
+    if (!user_id || !username) {
+      console.log("❌ Missing data:", req.body);
+      return res.status(400).json({ error: "Missing user_id or username" });
+    }
+
+    const numericId = parseInt(user_id);
+    if (isNaN(numericId)) {
+      console.log("❌ Invalid user_id:", user_id);
+      return res.status(400).json({ error: "Invalid user_id format" });
+    }
+
     const client = await clientPromise;
     const db = client.db("rap_mining");
     const users = db.collection("users");
@@ -25,17 +33,19 @@ export default async function handler(req, res) {
         { user_id: numericId },
         { $set: { username } }
       );
+      console.log("✅ Updated existing user:", numericId);
     } else {
       await users.insertOne({
         user_id: numericId,
         username,
         balance: 0,
       });
+      console.log("✅ New user registered:", numericId);
     }
 
-    res.status(200).json({ message: "User registered or updated successfully" });
+    return res.status(200).json({ message: "User registered or updated successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("💥 Internal error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
