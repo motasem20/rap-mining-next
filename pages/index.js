@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = "https://rap-mining-next.vercel.app/api";
+const API_BASE = "/api";
+
 
 export default function Home() {
   const [user, setUser] = useState(null);
