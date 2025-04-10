@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 const API_BASE = "/api";
 
-
 export default function Home() {
   const [user, setUser] = useState(null);
   const [lang, setLang] = useState("en");
@@ -44,7 +43,9 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.id }),
-    }).then(() => setBalance((prev) => prev + 10));
+    }).then(() => {
+      setBalance((prev) => prev + 10);
+    });
   };
 
   const handleAirdrop = () => {
@@ -53,36 +54,67 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.id }),
-    }).then(() => setBalance((prev) => prev + 100));
+    }).then(() => {
+      setBalance((prev) => prev + 100);
+    });
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "50px", fontFamily: "Arial" }}>
-      <h1>{lang === "ar" ? "مرحبًا بك في منجم RAP" : "Welcome to RAP Mining"}</h1>
+    <div
+      style={{
+        background: "#111",
+        color: "#fff",
+        minHeight: "100vh",
+        padding: "30px",
+        fontFamily: "Arial, sans-serif",
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ fontSize: "2.5rem", color: "#FFD700" }}>
+        {lang === "ar" ? "منجم RAP" : "RAP Mining"}
+      </h1>
+
       {user && (
-        <p>
-          {lang === "ar" ? "المستخدم:" : "User:"} {user.first_name} @{user.username}
+        <p style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
+          👤 {user.first_name} @{user.username}
         </p>
       )}
-      <p>
-        {lang === "ar" ? "رصيدك الحالي:" : "Your Balance:"} {balance} RAP 🪙
+
+      <p style={{ fontSize: "1.5rem", margin: "20px 0" }}>
+        {lang === "ar" ? "رصيدك الحالي:" : "Your Balance:"}{" "}
+        <strong style={{ color: "#00FFAB" }}>{balance} RAP 🪙</strong>
       </p>
-      <button
-        onClick={handleMine}
-        style={{ padding: "10px 20px", margin: "10px", fontWeight: "bold" }}
-      >
-        {lang === "ar" ? "تعدين" : "Mine"}
-      </button>
-      <button
-        onClick={handleAirdrop}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "gold",
-          fontWeight: "bold",
-        }}
-      >
-        {lang === "ar" ? "استلام Airdrop" : "Claim Airdrop"}
-      </button>
+
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
+        <button
+          onClick={handleMine}
+          style={{
+            background: "#333",
+            color: "#fff",
+            border: "2px solid #FFD700",
+            padding: "10px 20px",
+            fontSize: "1rem",
+            borderRadius: "12px",
+            cursor: "pointer",
+          }}
+        >
+          {lang === "ar" ? "تعدين" : "Mine"}
+        </button>
+        <button
+          onClick={handleAirdrop}
+          style={{
+            background: "#FFD700",
+            color: "#111",
+            fontWeight: "bold",
+            padding: "10px 20px",
+            fontSize: "1rem",
+            borderRadius: "12px",
+            cursor: "pointer",
+          }}
+        >
+          {lang === "ar" ? "استلام Airdrop" : "Claim Airdrop"}
+        </button>
+      </div>
     </div>
   );
 }
