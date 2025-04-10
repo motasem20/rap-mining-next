@@ -1,15 +1,15 @@
 // pages/api/mine.js
 import clientPromise from "../../lib/mongodb";
 
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   const { user_id } = req.body;
+  const numericId = parseInt(user_id);
 
-  if (!user_id) {
+  if (!numericId) {
     return res.status(400).json({ error: "Missing user_id" });
   }
 
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     const users = db.collection("users");
 
     const result = await users.updateOne(
-      { user_id },
+      { user_id: numericId }, // ✅ هنا التعديل
       { $inc: { balance: 10 } }
     );
 
