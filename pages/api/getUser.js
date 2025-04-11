@@ -1,15 +1,16 @@
-// rap-mining-next/pages/api/mine.js
+// rap-mining-next/pages/api/getUser.js
 import clientPromise from "../../lib/mongodb";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+  if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { user_id } = req.body;
+  const { user_id } = req.query;
   const numericId = parseInt(user_id);
+
   if (!numericId) {
-    return res.status(400).json({ error: "Missing user_id" });
+    return res.status(400).json({ error: "Missing or invalid user_id" });
   }
 
   try {
@@ -17,16 +18,12 @@ export default async function handler(req, res) {
     const db = client.db("rap_mining");
     const users = db.collection("users");
 
-    const result = await users.updateOne(
-      { user_id: numericId },
-      { $inc: { balance: 10 } }
-    );
-
-    if (result.matchedCount === 0) {
+    const user = await users.findOne({ user_id: numericId });
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.status(200).json({ message: "Mined 10 RAP successfully" });
+    return res.status(200).json({ user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });

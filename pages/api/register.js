@@ -1,4 +1,6 @@
-// pages/api/register.js
+
+
+// rap-mining-next/pages/api/register.js
 import clientPromise from "../../lib/mongodb";
 
 export default async function handler(req, res) {
@@ -9,16 +11,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { user_id, username } = req.body;
-
+    const { user_id, username, referrer } = req.body;
     if (!user_id || !username) {
-      console.log("❌ Missing data:", req.body);
       return res.status(400).json({ error: "Missing user_id or username" });
     }
 
     const numericId = parseInt(user_id);
     if (isNaN(numericId)) {
-      console.log("❌ Invalid user_id:", user_id);
       return res.status(400).json({ error: "Invalid user_id format" });
     }
 
@@ -29,18 +28,30 @@ export default async function handler(req, res) {
     const existingUser = await users.findOne({ user_id: numericId });
 
     if (existingUser) {
+      // موجود → نحدث الاسم فقط
       await users.updateOne(
         { user_id: numericId },
         { $set: { username } }
       );
-      console.log("✅ Updated existing user:", numericId);
     } else {
-      await users.insertOne({
+      // جديد
+      const newUser = {
         user_id: numericId,
         username,
         balance: 0,
-      });
-      console.log("✅ New user registered:", numericId);
+        wallet: "",
+        referrer: referrer ? parseInt(referrer) : null,
+        invites: 0,
+      };
+      await users.insertOne(newUser);
+
+      // إذا عنده referrer صحيح، نزود دعواته +1
+      if (referrer && !isNaN(parseInt(referrer))) {
+        await users.updateOne(
+          { user_id: parseInt(referrer) },
+          { $inc: { invites: 1 } }
+        );
+      }
     }
 
     return res.status(200).json({ message: "User registered or updated successfully" });

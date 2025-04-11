@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 
-// العنوان الأساسي لطلبك API
 const API_BASE = "/api";
 
-// دالة حساب الرتبة (Rank) من الرصيد
+// دالة بسيطة تحسب الرتبة بناءً على الرصيد
 function getRank(balance) {
   if (balance < 50) return "Newbie";
   if (balance < 300) return "Bronze";
@@ -18,12 +17,11 @@ export default function Home() {
   const [balance, setBalance] = useState(0);
   const [wallet, setWallet] = useState("");
   const [invites, setInvites] = useState(0);
-  const [showProfile, setShowProfile] = useState(false); // للتحكم بظهور نافذة الملف الشخصي
+  const [showProfile, setShowProfile] = useState(false);
 
-  // لو فيه ref= في الرابط
   const [referrer, setReferrer] = useState(null);
 
-  // جلب الرصيد من الـAPI
+  // جلب الرصيد
   const fetchBalance = (userId) => {
     fetch(`${API_BASE}/balance?user_id=${userId}`)
       .then((res) => res.json())
@@ -35,7 +33,7 @@ export default function Home() {
       .catch((err) => console.error(err));
   };
 
-  // جلب بيانات المستخدم (المحفظة + invites) من الـAPI
+  // جلب بيانات المستخدم (wallet, invites) من الـAPI
   const fetchUserData = (userId) => {
     fetch(`${API_BASE}/getUser?user_id=${userId}`)
       .then((res) => res.json())
@@ -48,7 +46,7 @@ export default function Home() {
       .catch((err) => console.error(err));
   };
 
-  // دالة التسجيل الأولي
+  // تسجيل المستخدم أول مرة
   const registerUser = (userData, refParam) => {
     fetch(`${API_BASE}/register`, {
       method: "POST",
@@ -56,7 +54,7 @@ export default function Home() {
       body: JSON.stringify({
         user_id: userData.id,
         username: userData.username,
-        referrer: refParam // قد تكون null
+        referrer: refParam
       }),
     })
     .then(() => {
@@ -65,29 +63,41 @@ export default function Home() {
     });
   };
 
-  // يُشغّل عند أول مرة تُفتح الصفحة
   useEffect(() => {
-    // قراءة referrer من رابط ?ref=1234
+    // لو فيه رابط إحالة ?ref=123456
     const urlParams = new URLSearchParams(window.location.search);
     const refParam = urlParams.get("ref");
     if (refParam) setReferrer(refParam);
 
+    // هنا نحاول نقرأ سياق Telegram
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.expand();
       const initData = tg.initDataUnsafe;
       const userData = initData.user;
-
+      if (!userData) {
+        console.log("❌ لا يوجد userData من Telegram");
+        return;
+      }
       setUser(userData);
       setLang(userData.language_code || "en");
-
       registerUser(userData, refParam);
+    } else {
+      console.warn("❗ أنت غالبًا تفتح الصفحة من المتصفح العادي وليس من Telegram WebApp");
+      // وضع اختبار للمحلي (اختياري): يمكنك إضافة userId وهمي لتجاربك
+      /*
+      const fakeUser = { id: 123456789, username: "local_test", language_code: "en" };
+      setUser(fakeUser);
+      registerUser(fakeUser, refParam);
+      */
     }
   }, []);
 
-  // زر التعدين - بصورة
   const handleMine = () => {
-    if (!user) return;
+    if (!user) {
+      alert("No Telegram user found!");
+      return;
+    }
     fetch(`${API_BASE}/mine`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -98,9 +108,11 @@ export default function Home() {
     });
   };
 
-  // زر Airdrop
   const handleAirdrop = () => {
-    if (!user) return;
+    if (!user) {
+      alert("No Telegram user found!");
+      return;
+    }
     fetch(`${API_BASE}/airdrop`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -111,9 +123,11 @@ export default function Home() {
     });
   };
 
-  // ربط المحفظة
   const handleConnectWallet = () => {
-    if (!user || !wallet) return;
+    if (!user || !wallet) {
+      alert("No user or no wallet input!");
+      return;
+    }
     fetch(`${API_BASE}/connectWallet`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -126,12 +140,10 @@ export default function Home() {
     .catch(err => console.error(err));
   };
 
-  // إظهار/إخفاء النافذة البسيطة للملف الشخصي
   const toggleProfile = () => {
     setShowProfile(!showProfile);
   };
 
-  // الرتبة
   const rank = getRank(balance);
 
   return (
@@ -146,7 +158,6 @@ export default function Home() {
         position: "relative"
       }}
     >
-      {/* عنوان الصفحة */}
       <h1 style={{ fontSize: "2.5rem", color: "#FFD700", margin: "10px 0" }}>
         {lang === "ar" ? "منجم RAP" : "RAP Mining"}
       </h1>
@@ -157,7 +168,6 @@ export default function Home() {
         </p>
       )}
 
-      {/* الرصيد + الرتبة + عدد الدعوات */}
       <div style={{ marginTop: "10px" }}>
         <p style={{ fontSize: "1.1rem", margin: "5px 0" }}>
           {lang === "ar" ? "رصيدك:" : "Balance:"}{" "}
@@ -171,7 +181,7 @@ export default function Home() {
         </p>
       </div>
 
-      {/* الصورة الكبيرة في المنتصف لزر التعدين */}
+      {/* زر التعدين بصورة (غوريلا من GitHub) */}
       <div
         onClick={handleMine}
         style={{
@@ -197,7 +207,7 @@ export default function Home() {
         {lang === "ar" ? "اضغط على الصورة لتعدين 10 عملة" : "Tap the image to Mine +10 RAP"}
       </p>
 
-      {/* السطر الأخير للأزرار (Airdrop, Connect Wallet, Profile) */}
+      {/* سطر الأزرار أسفل الصفحة */}
       <div
         style={{
           position: "absolute",
@@ -225,7 +235,7 @@ export default function Home() {
           {lang === "ar" ? "استلام Airdrop" : "Claim Airdrop"}
         </button>
 
-        {/* اتصال المحفظة */}
+        {/* حقل المحفظة + زر Wallet */}
         <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
           <input
             type="text"
@@ -269,7 +279,7 @@ export default function Home() {
         </button>
       </div>
 
-      {/* نافذة الملف الشخصي (Profile) */}
+      {/* نافذة الملف الشخصي */}
       {showProfile && (
         <div
           style={{
@@ -285,8 +295,12 @@ export default function Home() {
           <h3 style={{ margin: "0 0 10px", color: "#FFD700" }}>
             {lang === "ar" ? "ملفك الشخصي" : "Your Profile"}
           </h3>
-          <p><strong>ID:</strong> {user?.id}</p>
-          <p><strong>Username:</strong> {user?.username}</p>
+          {user && (
+            <>
+              <p><strong>ID:</strong> {user.id}</p>
+              <p><strong>Username:</strong> {user.username}</p>
+            </>
+          )}
           <p><strong>Balance:</strong> {balance} RAP</p>
           <p><strong>Rank:</strong> {rank}</p>
           <p><strong>Invites:</strong> {invites}</p>
@@ -308,7 +322,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* رابط الإحالة (من الممكن نقله للملف الشخصي) */}
+      {/* رابط الإحالة في أعلى اليمين */}
       {user && (
         <div style={{ position: "absolute", top: "10px", right: "10px", textAlign: "right" }}>
           <p style={{ color: "#FFD700", fontSize: "0.9rem", margin: 0 }}>
