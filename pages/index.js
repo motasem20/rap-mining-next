@@ -7,6 +7,17 @@ export default function Home() {
   const [lang, setLang] = useState("en");
   const [balance, setBalance] = useState(0);
 
+  const fetchBalance = (userId) => {
+    fetch(`${API_BASE}/balance?user_id=${userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.balance !== undefined) {
+          setBalance(data.balance);
+        }
+      })
+      .catch((err) => console.error(err));
+  };
+
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
@@ -16,7 +27,6 @@ export default function Home() {
       setUser(userData);
       setLang(userData.language_code || "en");
 
-      // Register user
       fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -24,16 +34,8 @@ export default function Home() {
           user_id: userData.id,
           username: userData.username,
         }),
-      });
-
-      // Get balance
-      fetch(`${API_BASE}/balance?user_id=${userData.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.balance !== undefined) {
-            setBalance(data.balance);
-          }
-        });
+      })
+      .then(() => fetchBalance(userData.id));
     }
   }, []);
 
@@ -43,9 +45,8 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.id }),
-    }).then(() => {
-      setBalance((prev) => prev + 10);
-    });
+    })
+    .then(() => fetchBalance(user.id));
   };
 
   const handleAirdrop = () => {
@@ -54,9 +55,8 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.id }),
-    }).then(() => {
-      setBalance((prev) => prev + 100);
-    });
+    })
+    .then(() => fetchBalance(user.id));
   };
 
   return (
